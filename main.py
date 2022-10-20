@@ -191,11 +191,9 @@ def ShowConfigurationTwitterBot():
         print(data[7])
         print(data[13])
         print(data[14])
-        print(data[13])
         print(data[19])
         print(data[20])
         print(data[21])
-        print(data[22])
         input("Press Enter to continue...")
         os.system('clear')
 
