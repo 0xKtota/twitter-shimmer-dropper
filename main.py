@@ -222,7 +222,6 @@ def get_followers(api):
     print("Retrieving IDs of followers, this might take some time.")
     for user in tweepy.Cursor(api.get_follower_ids, screen_name=twitter_user_id_to_monitor).items():
         follower_ids.append(user)   
-    print ()
     input("List generated. " + str(len(follower_ids)) + " followers found. Press Enter to continue..." )
     os.system('clear')
 
@@ -231,20 +230,18 @@ def check_mentions(api, keywords, user_name, monitor_id, since_id):
     global shimmer_receiver_address
     logger.info("Retrieving replies")
     while(True):
-        for tweet in tweepy.Cursor(api.search_tweets,q='to:'+user_name).items(2000):
+        for tweet in tweepy.Cursor(api.search_tweets,q='to:'+user_name, since_id=since_id).items(2000):
             try:
-                #print(tweet.text)
                 #for each status, overwrite that status by the same status, but from a different endpoint.
                 status = api.get_status(tweet.id, tweet_mode='extended')
                 if hasattr(tweet, 'in_reply_to_status_id_str'):
-                    print(tweet.id)
+                    time.sleep(60)
                 
                     if tweet.in_reply_to_status_id_str == monitor_id:
                         logger.info("There is a reply")
-                        ### print("Since ID " + str(since_id))
-                        if tweet.id >= int(since_id):
-                            ### print("tweet id " + str(tweet.id) + " since.id " + str(since_id))
                         
+                        if tweet.id >= int(since_id):
+                                                    
                             if tweet.user.id in follower_ids:
                                 logger.info("Is Following")
                                 
@@ -253,7 +250,7 @@ def check_mentions(api, keywords, user_name, monitor_id, since_id):
                                     logger.info("Looking for address in " + str(tweet.id))
                                     for shimmer_receiver_address in shimmer_reply_address:
                                         logger.info("Address found")
-                                        print(shimmer_receiver_address)
+                                        
                                         with open('.env','r',encoding='utf-8') as file:
                                             data = file.readlines()
                                         data[20] = "LAST_SMR_ADDRESS_SENT_TO="+ str(shimmer_receiver_address +"\n")
@@ -387,24 +384,19 @@ def print_menu():
         print (key, '--', menu_options[key] )
 
 def option1():
-    # Option 1 selected run the CreateShimmerProfile function
     CreateShimmerProfile()
 
 def option2():
-    # Option 2 selected run the GetShimmerAddresses function
     GetShimmerAddresses()
 
 def option3():
-    # Option 3 selected run the RunTheTwitterBot function
     RunTwitterBot()
     
 
 def option4():
-    # Option 4 selected go through configuration
     ConfigureTwitterBot()
 
 def option5():
-    # Option 4 selected go through configuration
     ShowConfigurationTwitterBot()
 
 def option7():
