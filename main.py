@@ -5,9 +5,9 @@ import time
 from iota_wallet import IotaWallet, StrongholdSecretManager
 import os
 from dotenv import load_dotenv
+from twitter_bot import run_twitter_bot
 
 load_dotenv()
-
 # Load information from .env file
 stronghold_password = os.getenv("STRONGHOLD_PASSWORD")
 shimmer_mnemonic = os.getenv("SHIMMER_MNEMONIC")
@@ -205,6 +205,7 @@ def create_api():
 
 def check_mentions(api, keywords, user_name, monitor_id, since_id):
     global shimmer_address_pattern
+    global shimmer_receiver_address
     logger.info("Retrieving replies")
     tweet_id = monitor_id
     name = user_name
@@ -224,7 +225,7 @@ def check_mentions(api, keywords, user_name, monitor_id, since_id):
                             shimmer_reply_address = re.findall(shimmer_address_pattern, tweet.text, flags=re.IGNORECASE)
 
                             for shimmer_receiver_address in shimmer_reply_address:
-                                print(shimmer_receiver_address)
+                                print("Shimmer address in check mentions " + str(shimmer_receiver_address))
                                 with open('.env','r',encoding='utf-8') as file:
                                     data = file.readlines()
                                 data[20] = "LAST_SMR_ADDRESS_SENT_TO="+ str(shimmer_receiver_address +"\n")
@@ -257,13 +258,12 @@ def RunTwitterBot():
     monitor_id = twitter_status_id_to_monitor
     since_id = twitter_last_tweet_reply
     user_name = twitter_user_id_to_monitor
-    since_id = check_mentions(api, "rms1", user_name, monitor_id, since_id)
+    since_id = check_mentions(api, "smr1", user_name, monitor_id, since_id)
 
 
 #####################################
 # SHIMMER SECTION
 #####################################
-
 # Option one create a Shimmer profile
 def CreateShimmerProfile():
     # Check if wallet.stronghold exists and exit if present
@@ -315,7 +315,7 @@ def SendNativeToken():
     print(f'Synced: {response}')
 
     wallet.set_stronghold_password(stronghold_password)
-    print(shimmer_receiver_address)
+    
     outputs = [{
         "address": shimmer_receiver_address,
         "nativeTokens": [(
@@ -337,7 +337,7 @@ menu_options = {
     2: 'Get Shimmer Address',
     3: 'Run bot',
     4: 'Configure',
-    7: '⚠️ RESET ⚠️',
+    5: '⚠️ RESET ⚠️',
     9: 'Exit',
 }
 
@@ -368,7 +368,7 @@ def option4():
     # Option 4 selected go through configuration
     ConfigureTwitterBot()
 
-def option7():
+def option5():
     ResetTwitterBotConfiguration()
 
 if __name__=='__main__':
@@ -388,10 +388,10 @@ if __name__=='__main__':
             option3()
         elif option == 4:
             option4()
-        elif option == 7:
-            option7()
+        elif option == 5:
+            option5()
         elif option == 9:
             print('Thanks for using this bot')
             exit()
         else:
-            print('Invalid option. Please enter a number between 1 and 5 or 9 to exit.')
+            print('Invalid option. Please enter a number between 1 and 4.')
