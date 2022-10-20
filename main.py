@@ -225,7 +225,7 @@ def check_mentions(api, keywords, user_name, monitor_id, since_id):
     tweet_id = monitor_id
     name = user_name
     while(True):
-        sleep(30)
+        time.sleep(30)
         for tweet in tweepy.Cursor(api.search_tweets,q='to:'+name).items(1000):
             try:
                 #print(tweet.text)
