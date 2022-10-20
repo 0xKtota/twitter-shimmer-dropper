@@ -17,6 +17,7 @@ twitter_user_id_to_monitor = os.getenv("TWITTER_USER_ID_TO_MONITOR")
 twitter_status_id_to_monitor = os.getenv("TWITTER_STATUS_ID_TO_MONITOR")
 twitter_last_tweet_reply = os.getenv("LAST_TWEET_REPLY_ID")
 config_done = os.getenv("CONFIG_DONE")
+tweet_keyword = os.getenv("TWEET_KEYWORD_TO_SEARCH")
 shimmer_address_pattern = os.getenv("SHIMMER_ADDRESS_PATTERN")
 shimmer_receiver_address = None
 
@@ -32,10 +33,9 @@ logger = logging.getLogger()
 # Twitter Configuration
 def ConfigureTwitterBot():
     global config_done
-    print("config_done in Option 4" + str(config_done))
-       
+
     if config_done == "1":
-        print("Configuration was already done. Use Option 3 to run the bot or Option 5 to RESET the configuration.")
+        print("Configuration was already done. Use Option 3 to run the bot or Option 7 to RESET the configuration.")
         input("Press Enter to continue...")
         os.system('clear')
         return
@@ -149,7 +149,7 @@ def ConfigureTwitterBot():
             data[7] = "TWITTER_STATUS_ID_TO_MONITOR="+ str(twitter_status_id_to_monitor +"\n")
             data[13] = "SHIMMER_NATIVE_TOKEN_ID="+ str(shimmer_native_token_id +"\n")
             data[14] = "SHIMMER_NATIVE_TOKEN_AMOUNT="+ str(shimmer_native_token_amount +"\n")
-            data[17] = "CONFIG_DONE=1"
+            data[18] = "CONFIG_DONE=1"
             with open('.env', 'w', encoding='utf-8') as file:
                 file.writelines(data)
 
@@ -165,8 +165,6 @@ def ConfigureTwitterBot():
 
 def ResetTwitterBotConfiguration():
     global config_done
-    print("config_done in Option 5" + str(config_done))
-    print('Handle option \'Option 5\'')
     def WriteToEnv():    
         with open('.env','r',encoding='utf-8') as file:
             data = file.readlines()
@@ -174,7 +172,7 @@ def ResetTwitterBotConfiguration():
         data[7] = "TWITTER_STATUS_ID_TO_MONITOR=\n"
         data[13] = "SHIMMER_NATIVE_TOKEN_ID=\n"
         data[14] = "SHIMMER_NATIVE_TOKEN_AMOUNT=\n"
-        data[17] = "CONFIG_DONE=0"
+        data[18] = "CONFIG_DONE=0"
         data[20] = "LAST_SMR_ADDRESS_SENT_TO=\n"
         data[21] = "LAST_TWEET_REPLY_ID=\n"
         with open('.env', 'w', encoding='utf-8') as file:
@@ -183,6 +181,22 @@ def ResetTwitterBotConfiguration():
     config_done = "0"
     input("Press Enter to continue...")
     os.system('clear')
+
+def ShowConfigurationTwitterBot():
+    with open('.env','r',encoding='utf-8') as file:
+        data = file.readlines()
+        print("Actual configuration")
+        print(data[6])
+        print(data[7])
+        print(data[13])
+        print(data[14])
+        print(data[13])
+        print(data[19])
+        print(data[20])
+        print(data[21])
+        print(data[22])
+        input("Press Enter to continue...")
+        os.system('clear')
 
 # Twitter Bot
 def create_api():
@@ -225,7 +239,6 @@ def check_mentions(api, keywords, user_name, monitor_id, since_id):
                             shimmer_reply_address = re.findall(shimmer_address_pattern, tweet.text, flags=re.IGNORECASE)
 
                             for shimmer_receiver_address in shimmer_reply_address:
-                                print("Shimmer address in check mentions " + str(shimmer_receiver_address))
                                 with open('.env','r',encoding='utf-8') as file:
                                     data = file.readlines()
                                 data[20] = "LAST_SMR_ADDRESS_SENT_TO="+ str(shimmer_receiver_address +"\n")
@@ -258,7 +271,8 @@ def RunTwitterBot():
     monitor_id = twitter_status_id_to_monitor
     since_id = twitter_last_tweet_reply
     user_name = twitter_user_id_to_monitor
-    since_id = check_mentions(api, "smr1", user_name, monitor_id, since_id)
+    keywords = tweet_keyword
+    since_id = check_mentions(api, keywords, user_name, monitor_id, since_id)
 
 
 #####################################
@@ -337,7 +351,8 @@ menu_options = {
     2: 'Get Shimmer Address',
     3: 'Run bot',
     4: 'Configure',
-    5: '⚠️ RESET ⚠️',
+    5: 'Show configuration',
+    7: '⚠️ RESET ⚠️',
     9: 'Exit',
 }
 
@@ -360,7 +375,6 @@ def option2():
 
 def option3():
     # Option 3 selected run the RunTheTwitterBot function
-    print('Handle option \'Option 3\'')
     RunTwitterBot()
     SendNativeToken()
 
@@ -369,6 +383,10 @@ def option4():
     ConfigureTwitterBot()
 
 def option5():
+    # Option 4 selected go through configuration
+    ShowConfigurationTwitterBot()
+
+def option7():
     ResetTwitterBotConfiguration()
 
 if __name__=='__main__':
@@ -390,8 +408,10 @@ if __name__=='__main__':
             option4()
         elif option == 5:
             option5()
+        elif option == 7:
+            option7()    
         elif option == 9:
             print('Thanks for using this bot')
             exit()
         else:
-            print('Invalid option. Please enter a number between 1 and 4.')
+            print('Invalid option. Please enter a number between 1 and 9.')
