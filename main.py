@@ -6,7 +6,6 @@ import csv
 from iota_wallet import IotaWallet, StrongholdSecretManager
 import os
 from dotenv import load_dotenv
-from twitter_bot import run_twitter_bot
 
 load_dotenv()
 # Load information from .env file
