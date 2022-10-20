@@ -12,6 +12,7 @@ Drop Shimmer Native Tokens to replies
 - set up your Python environment and Shimmer library following the [Shimmer wiki](https://wiki.iota.org/shimmer/wallet.rs/getting_started/python)
 - set up the .env file `cp .env.example .env`
 - Add `Twitter Auth keys` and Shimmer parameters to the .env file
+- Create Shimmer Profile
 - Send Shimmer testnet tokens and native tokens to the bot's address visible in the menu
 - Configure the bot using the menu
 - Start the bot using the menu
