@@ -225,6 +225,7 @@ def check_mentions(api, keywords, user_name, monitor_id, since_id):
     tweet_id = monitor_id
     name = user_name
     while(True):
+        sleep(30)
         for tweet in tweepy.Cursor(api.search_tweets,q='to:'+name).items(1000):
             try:
                 #print(tweet.text)
@@ -361,7 +362,7 @@ menu_options = {
     3: 'Run bot',
     4: 'Configure',
     5: 'Show configuration',
-    7: '⚠️ RESET ⚠️',
+    7: '⚠️  RESET ⚠️',
     9: 'Exit',
 }
 
@@ -371,6 +372,7 @@ menu_options = {
 #     print('Handle option \'Option #\'')
 
 def print_menu():
+    os.system('clear')
     for key in menu_options.keys():
         print (key, '--', menu_options[key] )
 
