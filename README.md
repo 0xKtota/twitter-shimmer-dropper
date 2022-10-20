@@ -1,5 +1,5 @@
 # twitter-shimmer-dropper
-Drop Shimmer Native Tokens to replies
+Drop Shimmer Native Tokens to replies (on the Shimmer Testnet)
 
 ## TODO
 [ ] Check for double address  
