@@ -9,6 +9,7 @@ Drop Shimmer Native Tokens to replies (on the Shimmer Testnet)
 # Setup
 
 - clone the repo
+- clone submodule `git submodule update --init --recursive`
 - set up your Python environment and Shimmer library following the [Shimmer wiki](https://wiki.iota.org/shimmer/wallet.rs/getting_started/python)
 - set up the .env file `cp .env.example .env`
 - Add `Twitter Auth keys` and Shimmer parameters to the .env file
