@@ -2,6 +2,7 @@ import re
 import tweepy
 import logging
 import time
+import csv
 from iota_wallet import IotaWallet, StrongholdSecretManager
 import os
 from dotenv import load_dotenv
@@ -223,25 +224,25 @@ def check_mentions(api, keywords, user_name, monitor_id, since_id):
     logger.info("Retrieving replies")
     tweet_id = monitor_id
     name = user_name
-
-    for tweet in tweepy.Cursor(api.search_tweets,q='to:'+name).items(1000):
-        try:
-            #print(tweet.text)
-            #for each status, overwrite that status by the same status, but from a different endpoint.
-            status = api.get_status(tweet.id, tweet_mode='extended')
-            if hasattr(tweet, 'in_reply_to_status_id_str'):
-            
-                if tweet.in_reply_to_status_id_str == tweet_id:
-                    logger.info("There is a reply")
-            
-                    if tweet.user.following == True:
-                        logger.info("Is Following")
+    while(True):
+        for tweet in tweepy.Cursor(api.search_tweets,q='to:'+name).items(1000):
+            try:
+                #print(tweet.text)
+                #for each status, overwrite that status by the same status, but from a different endpoint.
+                status = api.get_status(tweet.id, tweet_mode='extended')
+                if hasattr(tweet, 'in_reply_to_status_id_str'):
+                
+                    if tweet.in_reply_to_status_id_str == tweet_id:
+                        logger.info("There is a reply")
+                        print("Since ID " + str(since_id))
+                        if int(tweet.id) >= int(since_id):
                         
-                        if any(keyword in tweet.text.lower() for keyword in keywords):
-                            if str(tweet.id) >= str(since_id):
-                                shimmer_reply_address = re.findall(shimmer_address_pattern, tweet.text, flags=re.IGNORECASE)
+                            if tweet.user.following == True:
+                                logger.info("Is Following")
                                 
-                                while(True):
+                                if any(keyword in tweet.text.lower() for keyword in keywords):
+                                    shimmer_reply_address = re.findall(shimmer_address_pattern, tweet.text, flags=re.IGNORECASE)
+                                    logger.info("Looking for address")
                                     for shimmer_receiver_address in shimmer_reply_address:
                                         logger.info("Address found")
                                         with open('.env','r',encoding='utf-8') as file:
@@ -260,20 +261,21 @@ def check_mentions(api, keywords, user_name, monitor_id, since_id):
                                                 with open('.env', 'w', encoding='utf-8') as file:
                                                     file.writelines(data)
                                                 tweet.favorite()
+                                                since_id = tweet.id
                                                 logger.info("Tweet is now liked")
                                                 SendNativeToken()
-                                                continue
+                                                #continue
                                             except tweepy.TweepyException as e:
                                                 print('Error: ' + str(e))
-                                                continue
+                                                #continue
                                         elif status.favorited == True:
-                                            logger.info("Is liked no need to send tweet")
-                                            continue                                                 
-        except tweepy.TweepyException as e:
-            print('Error: ' + str(e))
-            continue
-        except StopIteration:
-            break
+                                            logger.info("Is liked no need to send tokens")
+                                            #continue                                                 
+            except tweepy.TweepyException as e:
+                print('Error: ' + str(e))
+                #continue
+#        except StopIteration:
+#            break
 
 def RunTwitterBot():
     api = create_api()
