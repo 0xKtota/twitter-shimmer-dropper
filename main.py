@@ -173,9 +173,9 @@ def ResetTwitterBotConfiguration():
         data[7] = "TWITTER_STATUS_ID_TO_MONITOR=\n"
         data[13] = "SHIMMER_NATIVE_TOKEN_ID=\n"
         data[14] = "SHIMMER_NATIVE_TOKEN_AMOUNT=\n"
-        data[18] = "CONFIG_DONE=0"
+        data[18] = "CONFIG_DONE=0\n"
         data[20] = "LAST_SMR_ADDRESS_SENT_TO=\n"
-        data[21] = "LAST_TWEET_REPLY_ID=\n"
+        data[21] = "LAST_TWEET_REPLY_ID=0\n"
         with open('.env', 'w', encoding='utf-8') as file:
             file.writelines(data)
     WriteToEnv()
