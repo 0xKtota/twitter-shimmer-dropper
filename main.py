@@ -358,6 +358,8 @@ def SendNativeToken():
     transaction = account.send_native_tokens(outputs, None)
 
     print(f'Sent transaction: {transaction}')
+    # Make sure that the tokens are sent and the lock on the database is removed
+    time.sleep(25)
 
 # Menu Options
 menu_options = {
