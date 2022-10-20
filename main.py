@@ -21,6 +21,7 @@ config_done = os.getenv("CONFIG_DONE")
 tweet_keyword = os.getenv("TWEET_KEYWORD_TO_SEARCH")
 shimmer_address_pattern = os.getenv("SHIMMER_ADDRESS_PATTERN")
 shimmer_receiver_address = None
+follower_ids = []
 
 # Configure Logger
 logging.basicConfig(level=logging.INFO)
@@ -217,35 +218,42 @@ def create_api():
     logger.info("API created")
     return api
 
+def get_followers(api):
+    print("Retrieving IDs of followers, this might take some time.")
+    for user in tweepy.Cursor(api.get_follower_ids, screen_name=twitter_user_id_to_monitor).items():
+        follower_ids.append(user)   
+    print ()
+    input("List generated. " + str(len(follower_ids)) + " followers found. Press Enter to continue..." )
+    os.system('clear')
 
 def check_mentions(api, keywords, user_name, monitor_id, since_id):
     global shimmer_address_pattern
     global shimmer_receiver_address
     logger.info("Retrieving replies")
-    tweet_id = monitor_id
-    name = user_name
     while(True):
-        time.sleep(30)
-        for tweet in tweepy.Cursor(api.search_tweets,q='to:'+name).items(1000):
+        for tweet in tweepy.Cursor(api.search_tweets,q='to:'+user_name).items(2000):
             try:
                 #print(tweet.text)
                 #for each status, overwrite that status by the same status, but from a different endpoint.
                 status = api.get_status(tweet.id, tweet_mode='extended')
                 if hasattr(tweet, 'in_reply_to_status_id_str'):
+                    print(tweet.id)
                 
-                    if tweet.in_reply_to_status_id_str == tweet_id:
+                    if tweet.in_reply_to_status_id_str == monitor_id:
                         logger.info("There is a reply")
-                        print("Since ID " + str(since_id))
-                        if int(tweet.id) >= int(since_id):
+                        ### print("Since ID " + str(since_id))
+                        if tweet.id >= int(since_id):
+                            ### print("tweet id " + str(tweet.id) + " since.id " + str(since_id))
                         
-                            if tweet.user.following == True:
+                            if tweet.user.id in follower_ids:
                                 logger.info("Is Following")
                                 
                                 if any(keyword in tweet.text.lower() for keyword in keywords):
                                     shimmer_reply_address = re.findall(shimmer_address_pattern, tweet.text, flags=re.IGNORECASE)
-                                    logger.info("Looking for address")
+                                    logger.info("Looking for address in " + str(tweet.id))
                                     for shimmer_receiver_address in shimmer_reply_address:
                                         logger.info("Address found")
+                                        print(shimmer_receiver_address)
                                         with open('.env','r',encoding='utf-8') as file:
                                             data = file.readlines()
                                         data[20] = "LAST_SMR_ADDRESS_SENT_TO="+ str(shimmer_receiver_address +"\n")
@@ -280,11 +288,13 @@ def check_mentions(api, keywords, user_name, monitor_id, since_id):
 
 def RunTwitterBot():
     api = create_api()
-    monitor_id = twitter_status_id_to_monitor
-    since_id = twitter_last_tweet_reply
-    user_name = twitter_user_id_to_monitor
     keywords = tweet_keyword
-    since_id = check_mentions(api, keywords, user_name, monitor_id, since_id)
+    user_name = twitter_user_id_to_monitor
+    monitor_id = twitter_status_id_to_monitor
+    since_id = twitter_last_tweet_reply   
+    get_followers(api)
+    check_mentions(api, keywords, user_name, monitor_id, since_id)
+    
 
 
 #####################################
