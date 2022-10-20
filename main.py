@@ -225,46 +225,55 @@ def check_mentions(api, keywords, user_name, monitor_id, since_id):
     name = user_name
 
     for tweet in tweepy.Cursor(api.search_tweets,q='to:'+name).items(1000):
-        if hasattr(tweet, 'in_reply_to_status_id_str'):
+        try:
+            #print(tweet.text)
+            #for each status, overwrite that status by the same status, but from a different endpoint.
+            status = api.get_status(tweet.id, tweet_mode='extended')
+            if hasattr(tweet, 'in_reply_to_status_id_str'):
             
-            if tweet.in_reply_to_status_id_str == tweet_id:
-                logger.info("There is a reply")
-        
-                if tweet.user.following == True:
-                    logger.info("Is Following")
-                    
-                    if any(keyword in tweet.text.lower() for keyword in keywords):
-                        if str(tweet.id) >= str(since_id):
-                            logger.info("Keyword found")
-                            shimmer_reply_address = re.findall(shimmer_address_pattern, tweet.text, flags=re.IGNORECASE)
-
-                            for shimmer_receiver_address in shimmer_reply_address:
-                                with open('.env','r',encoding='utf-8') as file:
-                                    data = file.readlines()
-                                data[20] = "LAST_SMR_ADDRESS_SENT_TO="+ str(shimmer_receiver_address +"\n")
-                                with open('.env', 'w', encoding='utf-8') as file:
-                                    file.writelines(data)
-                                time.sleep(30)
-                                print("I am sleeping")                    
+                if tweet.in_reply_to_status_id_str == tweet_id:
+                    logger.info("There is a reply")
+            
+                    if tweet.user.following == True:
+                        logger.info("Is Following")
+                        
+                        if any(keyword in tweet.text.lower() for keyword in keywords):
+                            if str(tweet.id) >= str(since_id):
+                                shimmer_reply_address = re.findall(shimmer_address_pattern, tweet.text, flags=re.IGNORECASE)
                                 
-                                if tweet.favorited == False:
-                                    try:
-                                        logger.info("Is not Liked")
+                                while(True):
+                                    for shimmer_receiver_address in shimmer_reply_address:
+                                        logger.info("Address found")
                                         with open('.env','r',encoding='utf-8') as file:
                                             data = file.readlines()
-                                        data[21] = "LAST_TWEET_REPLY_ID="+ str(tweet.id) +"\n"
+                                        data[20] = "LAST_SMR_ADDRESS_SENT_TO="+ str(shimmer_receiver_address +"\n")
                                         with open('.env', 'w', encoding='utf-8') as file:
                                             file.writelines(data)
-                                        tweet.favorite()
-                                        return shimmer_receiver_address
-                                    except:
-                                        print("Like did not work")
+                                        logger.info(tweet.favorited)
 
-                                elif tweet.favorited == True:
-                                    time.sleep(30)
-                                    print("I am sleeping")
-                                    logger.info("Is liked")
-                                    print(tweet)                                            
+                                        if status.favorited == False:
+                                            try:
+                                                logger.info("Is not Liked")
+                                                with open('.env','r',encoding='utf-8') as file:
+                                                    data = file.readlines()
+                                                data[21] = "LAST_TWEET_REPLY_ID="+ str(tweet.id) +"\n"
+                                                with open('.env', 'w', encoding='utf-8') as file:
+                                                    file.writelines(data)
+                                                tweet.favorite()
+                                                logger.info("Tweet is now liked")
+                                                SendNativeToken()
+                                                continue
+                                            except tweepy.TweepyException as e:
+                                                print('Error: ' + str(e))
+                                                continue
+                                        elif status.favorited == True:
+                                            logger.info("Is liked no need to send tweet")
+                                            continue                                                 
+        except tweepy.TweepyException as e:
+            print('Error: ' + str(e))
+            continue
+        except StopIteration:
+            break
 
 def RunTwitterBot():
     api = create_api()
@@ -327,7 +336,7 @@ def SendNativeToken():
     # Sync account with the node
     response = account.sync_account()
     print(f'Synced: {response}')
-
+    logger.info("Sending to " + shimmer_receiver_address)
     wallet.set_stronghold_password(stronghold_password)
     
     outputs = [{
@@ -342,8 +351,6 @@ def SendNativeToken():
     transaction = account.send_native_tokens(outputs, None)
 
     print(f'Sent transaction: {transaction}')
-    input("Press Enter to continue...")
-    os.system('clear')
 
 # Menu Options
 menu_options = {
@@ -376,7 +383,7 @@ def option2():
 def option3():
     # Option 3 selected run the RunTheTwitterBot function
     RunTwitterBot()
-    SendNativeToken()
+    
 
 def option4():
     # Option 4 selected go through configuration
