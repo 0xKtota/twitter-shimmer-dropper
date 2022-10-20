@@ -219,8 +219,7 @@ def get_followers(api):
     print("Retrieving IDs of followers, this might take some time.")
     for user in tweepy.Cursor(api.get_follower_ids, screen_name=twitter_user_id_to_monitor).items():
         follower_ids.append(user)   
-    input("List generated. " + str(len(follower_ids)) + " followers found. Press Enter to continue..." )
-    os.system('clear')
+    logger.info("List generated. " + str(len(follower_ids)) + " followers found")
 
 def check_mentions(api, keywords, user_name, monitor_id, since_id):
     global shimmer_address_pattern
