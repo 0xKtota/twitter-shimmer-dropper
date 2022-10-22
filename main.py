@@ -273,7 +273,6 @@ def CheckMentions(api, keywords, user_name, monitor_id, since_id):
                                         data[20] = "LAST_SMR_ADDRESS_SENT_TO="+ str(shimmer_receiver_address +"\n")
                                         with open('.env', 'w', encoding='utf-8') as file:
                                             file.writelines(data)
-                                        logger.info(tweet.favorited)
 
                                         if status.favorited == False:
                                             try:
