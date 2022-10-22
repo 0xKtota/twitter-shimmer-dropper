@@ -6,6 +6,7 @@ import csv
 from iota_wallet import IotaWallet, StrongholdSecretManager
 import os
 from dotenv import load_dotenv
+import random
 
 load_dotenv()
 # Load information from .env file
@@ -21,6 +22,7 @@ tweet_keyword = os.getenv("TWEET_KEYWORD_TO_SEARCH")
 shimmer_address_pattern = os.getenv("SHIMMER_ADDRESS_PATTERN")
 shimmer_receiver_address = None
 follower_ids = []
+replies_ids = []
 
 # Configure Logger
 logging.basicConfig(level=logging.INFO)
@@ -198,7 +200,7 @@ def ShowConfigurationTwitterBot():
         os.system('clear')
 
 # Twitter Bot
-def create_api():
+def CreateApi():
     consumer_key = os.getenv("CONSUMER_KEY")
     consumer_secret = os.getenv("CONSUMER_SECRET")
     access_token = os.getenv("ACCESS_TOKEN")
@@ -215,31 +217,50 @@ def create_api():
     logger.info("API created")
     return api
 
-def get_followers(api):
-    print("Retrieving IDs of followers, this might take some time.")
-    for user in tweepy.Cursor(api.get_follower_ids, screen_name=twitter_user_id_to_monitor).items():
-        follower_ids.append(user)   
-    logger.info("List generated. " + str(len(follower_ids)) + " followers found")
+def GetFollowers(api):
+    logger.info("Retrieving IDs of followers, this might take some time.")
 
-def check_mentions(api, keywords, user_name, monitor_id, since_id):
+    for user in tweepy.Cursor(api.get_follower_ids, screen_name=twitter_user_id_to_monitor).items():
+        follower_ids.append(user)
+
+def CheckMentions(api, keywords, user_name, monitor_id, since_id):
     global shimmer_address_pattern
     global shimmer_receiver_address
+    global follower_ids
+    GetFollowers(api)
+    logger.info(str(len(follower_ids)) + " followers found.")
     logger.info("Retrieving replies")
-    while(True):
-        for tweet in tweepy.Cursor(api.search_tweets,q='to:'+user_name, since_id=since_id).items(2000):
+    extra_time = random.randint(1, 8)
+    
+
+    # while(True):
+    count=0
+    while(count<100):
+        logger.info("Round: " + str(count))
+        count +=1
+        
+        #for tweet in tweepy.Cursor(api.search_tweets, q='to:'+user_name, since_id=since_id).items(2000):
+        for tweet in tweepy.Cursor(api.search_tweets, q='to:'+user_name, result_type='recent', count=100).items(1000):
+            time.sleep(1 + extra_time)
+            logger.info("Getting extra sleep")
+
             try:
-                #for each status, overwrite that status by the same status, but from a different endpoint.
+                # for each status, overwrite that status by the same status, but from a different endpoint.
+                #status = api.get_status(tweet.id, tweet_mode='extended', result_type='recent')
                 status = api.get_status(tweet.id, tweet_mode='extended')
-                if hasattr(tweet, 'in_reply_to_status_id_str'):
-                    time.sleep(60)
+
+                # testing 
+                if tweet.id not in replies_ids:
+
+                    if hasattr(tweet, 'in_reply_to_status_id_str'):
                 
-                    if tweet.in_reply_to_status_id_str == monitor_id:
-                        logger.info("There is a reply")
-                        
-                        if tweet.id >= int(since_id):
-                                                    
+                        if tweet.in_reply_to_status_id_str == monitor_id:
+                            replies_ids.append(tweet.id)
+                            logger.info("There is a reply")                     
+
                             if tweet.user.id in follower_ids:
                                 logger.info("Is Following")
+                                
                                 
                                 if any(keyword in tweet.text.lower() for keyword in keywords):
                                     shimmer_reply_address = re.findall(shimmer_address_pattern, tweet.text, flags=re.IGNORECASE)
@@ -263,7 +284,7 @@ def check_mentions(api, keywords, user_name, monitor_id, since_id):
                                                 with open('.env', 'w', encoding='utf-8') as file:
                                                     file.writelines(data)
                                                 tweet.favorite()
-                                                since_id = tweet.id
+                                                #since_id = tweet.id
                                                 logger.info("Tweet is now liked")
                                                 SendNativeToken()
                                                 #continue
@@ -275,20 +296,17 @@ def check_mentions(api, keywords, user_name, monitor_id, since_id):
                                             #continue                                                 
             except tweepy.TweepyException as e:
                 print('Error: ' + str(e))
-                #continue
-#        except StopIteration:
-#            break
+                
+    else:
+        CheckMentions(api, keywords, user_name, monitor_id, since_id)
 
 def RunTwitterBot():
-    api = create_api()
+    api = CreateApi()
     keywords = tweet_keyword
     user_name = twitter_user_id_to_monitor
     monitor_id = twitter_status_id_to_monitor
-    since_id = twitter_last_tweet_reply   
-    get_followers(api)
-    check_mentions(api, keywords, user_name, monitor_id, since_id)
-    
-
+    since_id = twitter_last_tweet_reply
+    CheckMentions(api, keywords, user_name, monitor_id, since_id)
 
 #####################################
 # SHIMMER SECTION
@@ -306,7 +324,7 @@ def CreateShimmerProfile():
         # This creates a new database and account
 
         client_options = {
-            'nodes': ['https://api.testnet.shimmer.network'],
+            'nodes': ['https://api.shimmer.network'],
         }
 
         # Shimmer coin type
@@ -341,7 +359,7 @@ def SendNativeToken():
 
     # Sync account with the node
     response = account.sync_account()
-    print(f'Synced: {response}')
+    logger.info("Account syncronized")
     logger.info("Sending to " + shimmer_receiver_address)
     wallet.set_stronghold_password(stronghold_password)
     
@@ -356,9 +374,9 @@ def SendNativeToken():
 
     transaction = account.send_native_tokens(outputs, None)
 
-    print(f'Sent transaction: {transaction}')
-    # Make sure that the tokens are sent and the lock on the database is removed
+    logger.info("Transaction sent")
     time.sleep(25)
+    logger.info("Sleeping 25s to make sure transaction is out")
 
 # Menu Options
 menu_options = {
@@ -389,7 +407,6 @@ def option2():
 
 def option3():
     RunTwitterBot()
-    
 
 def option4():
     ConfigureTwitterBot()
@@ -408,7 +425,6 @@ if __name__=='__main__':
             option = int(input('Enter your choice: '))
         except:
             print('Wrong input. Please enter a number ...')
-        #Check what choice was entered and act accordingly
         if option == 1:
            option1()
         elif option == 2:
