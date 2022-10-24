@@ -359,7 +359,7 @@ def SendNativeToken():
     # Sync account with the node
     response = account.sync_account()
     logger.info("Account syncronized")
-    logger.info("Sending to " + shimmer_receiver_address)
+    logger.info("Sending to " + str(shimmer_receiver_address))
     wallet.set_stronghold_password(stronghold_password)
     
     outputs = [{
