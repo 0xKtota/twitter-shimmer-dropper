@@ -374,8 +374,9 @@ def SendNativeToken():
     transaction = account.send_native_tokens(outputs, None)
 
     logger.info("Transaction sent")
-    time.sleep(25)
     logger.info("Sleeping 25s to make sure transaction is out")
+    time.sleep(25)
+    
 
 # Menu Options
 menu_options = {
