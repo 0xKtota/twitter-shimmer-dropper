@@ -323,7 +323,7 @@ def CreateShimmerProfile():
         # This creates a new database and account
 
         client_options = {
-            'nodes': ['https://api.shimmer.network'],
+            'nodes': ['https://api.testnet.shimmer.network'],
         }
 
         # Shimmer coin type
