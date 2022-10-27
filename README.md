@@ -2,7 +2,7 @@
 Drop Shimmer Native Tokens to replies (on the Shimmer Testnet)
 
 ## TODO
-[ ] Check if all necessary files exist
+[ ] Check if all necessary files exist  
 [ ] Review and rewrite by a professional developer XD
 
 # Setup
