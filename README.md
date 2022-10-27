@@ -2,8 +2,7 @@
 Drop Shimmer Native Tokens to replies (on the Shimmer Testnet)
 
 ## TODO
-[ ] Check for double address  
-[ ] Check for double twitter user  
+[ ] Check if all necessary files exist
 [ ] Review and rewrite by a professional developer XD
 
 # Setup
@@ -26,3 +25,7 @@ Drop Shimmer Native Tokens to replies (on the Shimmer Testnet)
 - Start the bot using the menu
 
 ![image](https://user-images.githubusercontent.com/7383572/196917542-9dfc9956-d1d2-48db-82d8-a1adfb4019aa.png)
+
+- Logic
+![image](https://user-images.githubusercontent.com/7383572/198233531-b4eda657-6171-4144-a500-13c5d9467bc7.png)
+
