@@ -45,7 +45,7 @@ logger = logging.getLogger()
 
 # Twitter Configuration
 def ConfigureTwitterBot():
-
+    global config_done
     if IsConfigDone() == True:
         print("Configuration was already done. Use Option 3 to run the bot or Option 7 to RESET the configuration.")
         input("Press Enter to continue...")
@@ -124,7 +124,7 @@ def ConfigureTwitterBot():
             while(True):
                 try:
                     # Prompts the user for input string
-                    test = input("Enter Your Twitter User ID: ")
+                    test = input("Enter Your Twitter Username: ")
                     
                     # Checks whether the whole string matches the re.pattern or not
                     print(f"Twitter User ID entered = '{test}'")
@@ -154,28 +154,46 @@ def ConfigureTwitterBot():
                     print("Try again")
                 continue
 
+        def CheckFileExist(ins_filename):
+            f_p = ins_filename
+            # check if file is available in the file system
+            if not os.path.isfile(f_p):
+                with open(f_p, "a") as f:
+                    print('Empty text file was just created at {}.'.format(f_p))
+            else:
+                print('File exists: {}.'.format(f_p))
+
         def WriteToEnv():
             with open('.env','r',encoding='utf-8') as file:
                 data = file.readlines()
-            data[6] = "TWITTER_USER_ID_TO_MONITOR="+ str(twitter_user_id_to_monitor + "\n")
-            data[7] = "TWITTER_STATUS_ID_TO_MONITOR="+ str(twitter_status_id_to_monitor + "\n")
-            data[13] = "SHIMMER_NATIVE_TOKEN_ID="+ str(shimmer_native_token_id + "\n")
-            data[14] = "SHIMMER_NATIVE_TOKEN_AMOUNT="+ str(shimmer_native_token_amount + "\n")
-            data[18] = "CONFIG_DONE=1\n"
-            with open('.env', 'w', encoding='utf-8') as file:
-                file.writelines(data)
+                data[6] = "TWITTER_USER_ID_TO_MONITOR="+ str(twitter_user_id_to_monitor + "\n")
+                data[7] = "TWITTER_STATUS_ID_TO_MONITOR="+ str(twitter_status_id_to_monitor + "\n")
+                data[13] = "SHIMMER_NATIVE_TOKEN_ID="+ str(shimmer_native_token_id + "\n")
+                data[14] = "SHIMMER_NATIVE_TOKEN_AMOUNT="+ str(shimmer_native_token_amount + "\n")
+                data[18] = "CONFIG_DONE=1\n"
+                with open('.env', 'w', encoding='utf-8') as file:
+                    file.writelines(data)
+
+
+
 
         shimmer_native_token_id = InsertShimmerNativeTokenId()
         shimmer_native_token_amount = InsertShimmerNativeTokenAmount()
         twitter_user_id_to_monitor = InsertTwitterUserIdToMonitor()
         twitter_status_id_to_monitor = InsertTwitterStatusIdToMonitor()
+        # Verifying if all necessary file exist or write them
+        CheckFileExist(twitter_user_id_filename)
+        CheckFileExist(shimmer_address_sent_to_filename)
+        CheckFileExist(twitter_tweet_id_replied_to_filename)
 
         WriteToEnv()
         config_done = "1"
+
         input("Press Enter to continue...")
         os.system('clear')
 
 def ResetTwitterBotConfiguration():
+    global config_done
     if IsConfigDone() == True:
         answer = input("Continue configuration reset? yes or no: ") 
         if answer == "yes": 
@@ -189,6 +207,9 @@ def ResetTwitterBotConfiguration():
                 data[18] = "CONFIG_DONE=0\n"
                 with open('.env', 'w', encoding='utf-8') as file:
                     file.writelines(data)
+            DeleteExistingFile(twitter_user_id_filename)
+            DeleteExistingFile(shimmer_address_sent_to_filename)
+            DeleteExistingFile(twitter_tweet_id_replied_to_filename)
             WriteToEnv()
             config_done = "0"
             logger.info("Configuration reset")
@@ -382,27 +403,30 @@ def CreateShimmerProfile():
         input("Press Enter to continue...")
         os.system('clear')
     else:
-        print("Creating new profile")
-        # This creates a new database and account
+        try:
+            print("Creating new profile")
+            # This creates a new database and account
 
-        client_options = {
-            'nodes': ['https://api.shimmer.network'],
-        }
+            client_options = {
+                'nodes': ['https://api.shimmer.network'],
+            }
 
-        # Shimmer coin type
-        coin_type = 4219
+            # Shimmer coin type
+            coin_type = 4219
 
-        secret_manager = StrongholdSecretManager("wallet.stronghold", stronghold_password)
+            secret_manager = StrongholdSecretManager("wallet.stronghold", stronghold_password)
 
-        wallet = IotaWallet('./twitter-database', client_options, coin_type, secret_manager)
+            wallet = IotaWallet('./twitter-database', client_options, coin_type, secret_manager)
 
-        # Store the mnemonic in the Stronghold snapshot, this only needs to be done once
-        account = wallet.store_mnemonic(shimmer_mnemonic)
+            # Store the mnemonic in the Stronghold snapshot, this only needs to be done once
+            account = wallet.store_mnemonic(shimmer_mnemonic)
 
-        account = wallet.create_account('Twitter')
-        print(account)
-        input("Press Enter to continue...")
-        os.system('clear')
+            account = wallet.create_account('Twitter')
+            print(account)
+            input("Press Enter to continue...")
+            os.system('clear')
+        except:
+            logger.info("Add your 24 words mnemonic to the .env file") 
     
 def GetShimmerAddresses():
     # This shows all addresses in an account
@@ -467,6 +491,10 @@ def ReadAddressesFromFile():
                     else:
                         logger.info("This is not an address")
 
+#####################################
+# Configurations functions
+#####################################
+
 def WriteToFile(ins_data, ins_filename):
     print(ins_data)
     print(ins_filename)
@@ -486,7 +514,14 @@ def IsConfigDone():
         logger.debug("Configuration is OK.")
         return True
 
-
+def DeleteExistingFile(ins_filename):
+    f_p = ins_filename
+    # check if file is available in the file system
+    if os.path.exists(f_p):
+        os.remove(f_p)
+        print("The " + str(ins_filename) +  " file has been removed succesfully")
+    else:
+        print("The " + str(ins_filename) +  " cannot be removed, or does not exist")
 # Menu Options
 menu_options = {
     1: 'Create Profile',
