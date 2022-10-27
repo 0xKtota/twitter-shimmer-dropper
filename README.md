@@ -3,6 +3,7 @@ Drop Shimmer Native Tokens to replies (on the Shimmer Testnet)
 
 ## TODO
 [ ] Make hashtag search configurable  
+[ ] Automatically exclude author from reply check
 [ ] Review and rewrite by a professional developer XD
 
 # Setup
