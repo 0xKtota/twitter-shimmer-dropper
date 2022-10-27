@@ -1,7 +1,3 @@
-# TODO
-# CREATE twitter_user_id_filename if not existing
-# CREATE shimmer_address_sent_to_filename if not existing
-
 import re
 import tweepy
 import logging
