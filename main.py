@@ -21,7 +21,6 @@ shimmer_native_token_amount = os.getenv("SHIMMER_NATIVE_TOKEN_AMOUNT")
 shimmer_address_pattern = os.getenv("SHIMMER_ADDRESS_PATTERN")
 twitter_user_id_to_monitor = os.getenv("TWITTER_USER_ID_TO_MONITOR")
 twitter_status_id_to_monitor = os.getenv("TWITTER_STATUS_ID_TO_MONITOR")
-twitter_last_tweet_reply = os.getenv("LAST_TWEET_REPLY_ID")
 tweet_keyword = os.getenv("TWEET_KEYWORD_TO_SEARCH")
 config_done = os.getenv("CONFIG_DONE")
 
@@ -158,11 +157,11 @@ def ConfigureTwitterBot():
         def WriteToEnv():
             with open('.env','r',encoding='utf-8') as file:
                 data = file.readlines()
-            data[6] = "TWITTER_USER_ID_TO_MONITOR="+ str(twitter_user_id_to_monitor +"\n")
-            data[7] = "TWITTER_STATUS_ID_TO_MONITOR="+ str(twitter_status_id_to_monitor +"\n")
-            data[13] = "SHIMMER_NATIVE_TOKEN_ID="+ str(shimmer_native_token_id +"\n")
-            data[14] = "SHIMMER_NATIVE_TOKEN_AMOUNT="+ str(shimmer_native_token_amount +"\n")
-            data[18] = "CONFIG_DONE=1"
+            data[6] = "TWITTER_USER_ID_TO_MONITOR="+ str(twitter_user_id_to_monitor + "\n")
+            data[7] = "TWITTER_STATUS_ID_TO_MONITOR="+ str(twitter_status_id_to_monitor + "\n")
+            data[13] = "SHIMMER_NATIVE_TOKEN_ID="+ str(shimmer_native_token_id + "\n")
+            data[14] = "SHIMMER_NATIVE_TOKEN_AMOUNT="+ str(shimmer_native_token_amount + "\n")
+            data[18] = "CONFIG_DONE=1\n"
             with open('.env', 'w', encoding='utf-8') as file:
                 file.writelines(data)
 
@@ -188,8 +187,6 @@ def ResetTwitterBotConfiguration():
                 data[13] = "SHIMMER_NATIVE_TOKEN_ID=\n"
                 data[14] = "SHIMMER_NATIVE_TOKEN_AMOUNT=\n"
                 data[18] = "CONFIG_DONE=0\n"
-                data[20] = "LAST_SMR_ADDRESS_SENT_TO=\n"
-                data[21] = "LAST_TWEET_REPLY_ID=0\n"
                 with open('.env', 'w', encoding='utf-8') as file:
                     file.writelines(data)
             WriteToEnv()
@@ -208,9 +205,12 @@ def ShowConfigurationTwitterBot():
         print(data[7])
         print(data[13])
         print(data[14])
+        print(data[18])
         print(data[19])
         print(data[20])
         print(data[21])
+        print(data[22])
+        print(data[23])
         input("Press Enter to continue...")
         os.system('clear')
 
@@ -238,7 +238,7 @@ def GetFollowers(api):
     for user in tweepy.Cursor(api.get_follower_ids, screen_name=twitter_user_id_to_monitor).items():
         follower_ids.append(user)
 
-def CheckMentions(api, keywords, user_name, monitor_id, since_id):
+def CheckMentions(api, keywords, user_name, monitor_id):
     if IsConfigDone() == True:
         global shimmer_address_pattern
         global shimmer_receiver_address
@@ -359,7 +359,7 @@ def CheckMentions(api, keywords, user_name, monitor_id, since_id):
             else:
                 logger.info("There is an issue with searching tweets.")
         else:
-            CheckMentions(api, keywords, user_name, monitor_id, since_id)
+            CheckMentions(api, keywords, user_name, monitor_id)
     else:
         logger.info("Please finish the configuration")                
     
@@ -369,8 +369,7 @@ def RunTwitterBot():
     keywords = tweet_keyword
     user_name = twitter_user_id_to_monitor
     monitor_id = twitter_status_id_to_monitor
-    since_id = twitter_last_tweet_reply
-    CheckMentions(api, keywords, user_name, monitor_id, since_id)
+    CheckMentions(api, keywords, user_name, monitor_id)
 
 #####################################
 # SHIMMER SECTION
