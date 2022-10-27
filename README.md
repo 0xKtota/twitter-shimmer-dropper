@@ -2,7 +2,7 @@
 Drop Shimmer Native Tokens to replies (on the Shimmer Testnet)
 
 ## TODO
-[ ] Check if all necessary files exist  
+[ ] Make hashtag search configurable  
 [ ] Review and rewrite by a professional developer XD
 
 # Setup
