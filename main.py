@@ -1,3 +1,7 @@
+# TODO
+# CREATE twitter_user_id_filename if not existing
+# CREATE shimmer_address_sent_to_filename if not existing
+
 import re
 import tweepy
 import logging
@@ -243,7 +247,6 @@ def CreateApi():
 
 def GetFollowers(api):
     logger.info("Retrieving IDs of followers, this might take some time.")
-
     for user in tweepy.Cursor(api.get_follower_ids, screen_name=twitter_user_id_to_monitor).items():
         follower_ids.append(user)
 
@@ -260,15 +263,15 @@ def CheckMentions(api, keywords, user_name, monitor_id):
         extra_time = random.randint(1, 8)
         count = 0
 
-        while count < 10000:
-            logger.info("Round: " + str(count))
-            
-            for tweet in tweepy.Cursor(api.search_tweets, q='to:'+user_name, result_type='recent', count=100).items(1000):
+        for tweet in tweepy.Cursor(api.search_tweets, q='to:'+user_name, result_type='recent', count=100).items(1000):
+            while count < 200:
+                logger.info("Round: " + str(count))
 
                 try:
                     # for each status, overwrite that status by the same status, but from a different endpoint.
                     status = api.get_status(tweet.id, tweet_mode='extended')
                     logger.info("Getting extra sleep")
+                    count = count + 1
                     time.sleep(1 + extra_time)
 
                     # Verify if user's tweet is a reply
@@ -276,16 +279,27 @@ def CheckMentions(api, keywords, user_name, monitor_id):
                 
                         # Verify if user's tweet is a reply to the tweet we monitor
                         if tweet.in_reply_to_status_id_str == monitor_id:
-                            print(tweet.id)
                             logger.info("There is a reply to our giveaway")
 
                             # Verify if we already replied
                             CheckFileExist(twitter_tweet_id_replied_to_no_follow_filename)
                             with open(twitter_tweet_id_replied_to_no_follow_filename, mode ='r', encoding='UTF8') as file:
                                 logger.info("Opening " + str(twitter_tweet_id_replied_to_no_follow_filename) + " file.")
-                                if (str(tweet.id)) in file.read():                        
+                                if str(tweet.id) in file.read():                        
                                         logger.info("We already replied for no follow")
-                                        continue
+                                        break
+                                elif str(tweet.id) in file.read() and tweet.user.id in follower_ids:
+                                    logger.info("We replied before and is now following.")
+                                    # Now we send the tokens
+                                    SendNativeToken()
+                                    # Write the address to the file
+                                    WriteToFile(shimmer_receiver_address, shimmer_address_sent_to_filename)
+                                    #Write the Twitter user.ID to the file
+                                    WriteToFile(tweet.user.id, twitter_user_id_filename)
+                                    # We like (favorite) the Tweet to mark it as complete, this tweet will no longer be taken in consideration
+                                    tweet.favorite()
+                                    logger.info("Tweet is now liked")
+                                    break
                                 else:
                                     logger.info("We did not reply for no follow. Continue.")
                                 
@@ -299,18 +313,15 @@ def CheckMentions(api, keywords, user_name, monitor_id):
                                             logger.info("Opening " + str(twitter_tweet_id_replied_to_no_hashtag_filename) + " file.")
                                             if (str(tweet.id)) in file.read():                        
                                                 logger.info("We already replied for no hashtag")
+                                                break
                                             else:
                                                 logger.info("We did not reply for no hashtag. Continue.")
                                                 
                                                 # Verify if the hashtag is in the message
-                                                print("Tweet text is " + str(tweet.text))
-                                                print("Hashtag to find is " + str(tweet_hashtag_to_search))
                                                 hashtag_in_message = re.findall(tweet_hashtag_to_search,  tweet.text.lower(), flags=re.IGNORECASE)
-                                                print("Hashtag in message is " + str(hashtag_in_message))
 
                                                 if tweet_hashtag_to_search.lower() in hashtag_in_message:
                                                     hashtag_found = 1
-                                                    print(hashtag_found)
                                                     logger.info("Hashtag found")
 
                                                     if hashtag_found == 1:
@@ -320,7 +331,7 @@ def CheckMentions(api, keywords, user_name, monitor_id):
                                                             logger.info("Opening " + str(twitter_user_id_filename) + " file.")
                                                             if (str(tweet.user.id)) in file.read():
                                                                 logger.info("User ID " + str(tweet.user.id) + " found in the list. Skipping.")
-                                                                continue
+                                                                break
                                                             else:
                                                                 logger.info("This is a new user. We continue")
                                                                 
@@ -359,11 +370,14 @@ def CheckMentions(api, keywords, user_name, monitor_id):
                                                                                 continue
 
                                                                         else:
-                                                                            logger.info("Is liked no need to send tokens") 
+                                                                            logger.info("Is liked no need to send tokens")
+                                                                            break
                                                                     else:
                                                                         logger.info("No address in the reply")
+                                                                        break
                                                                 else:
                                                                     logger.info("No keyword in the reply")
+                                                                    break
 
                                                 else:
                                                     logger.info("Hashtag is missing")
@@ -374,6 +388,7 @@ def CheckMentions(api, keywords, user_name, monitor_id):
                                                     WriteToFile(tweet.id, twitter_tweet_id_replied_to_no_hashtag_filename)
                                                     tweet.favorite()
                                                     logger.info("Tweet is now liked")                                                    
+                                                    break
                                 
                                     elif tweet.user.id not in follower_ids:
                                         logger.info("Not following, replying message.")
@@ -382,31 +397,30 @@ def CheckMentions(api, keywords, user_name, monitor_id):
                                         api.update_status(message_to_reply, in_reply_to_status_id = tweet.id, auto_populate_reply_metadata=True)
                                         # Add tweet id to file
                                         WriteToFile(tweet.id, twitter_tweet_id_replied_to_no_follow_filename)
+                                        break
                                     else:
                                         logger.info("Not following, already replied")
-                                        count = count + 1
+                                        break
                         else:
                             logger.info("This is not a reply to our giveaway tweet.")
                             print(tweet.id)
-                            count = count + 1
-                            continue
+                            break
 
                     else:
                         logger.info("Is not a reply")
-                        count = count + 1
+                        break
 
                 except tweepy.TweepyException as e:
                     print('Error: ' + str(e))
 
             else:
-                logger.info("There is an issue with searching tweets.")
-                count = count + 1
+                CheckMentions(api, keywords, user_name, monitor_id)
+
         else:
-            CheckMentions(api, keywords, user_name, monitor_id)
+            logger.info("There is an issue with searching tweets.")
+
     else:
-        logger.info("Please finish the configuration")
-        count = count + 1
-    
+        logger.info("Please finish the configuration")    
 
 def RunTwitterBot():
     api = CreateApi()
