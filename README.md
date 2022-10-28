@@ -29,7 +29,6 @@ Drop Shimmer Native Tokens to replies (on the Shimmer Testnet)
 
 - Logic
 
-![image](https://user-images.githubusercontent.com/7383572/198522417-5d58257c-421f-4bac-b278-d6a8ed59c063.png)
-
+![image](https://user-images.githubusercontent.com/7383572/198522623-ebd92dff-777d-450c-853a-ac5ee10bd916.png)
 
 
