@@ -1,7 +1,3 @@
-# TODO
-# CREATE twitter_user_id_filename if not existing
-# CREATE shimmer_address_sent_to_filename if not existing
-
 import re
 import tweepy
 import logging
@@ -288,119 +284,121 @@ def CheckMentions(api, keywords, user_name, monitor_id):
                                 if str(tweet.id) in file.read():                        
                                         logger.info("We already replied for no follow")
                                         break
-                                elif str(tweet.id) in file.read() and tweet.user.id in follower_ids:
-                                    logger.info("We replied before and is now following.")
-                                    # Now we send the tokens
-                                    SendNativeToken()
-                                    # Write the address to the file
-                                    WriteToFile(shimmer_receiver_address, shimmer_address_sent_to_filename)
-                                    #Write the Twitter user.ID to the file
-                                    WriteToFile(tweet.user.id, twitter_user_id_filename)
-                                    # We like (favorite) the Tweet to mark it as complete, this tweet will no longer be taken in consideration
-                                    tweet.favorite()
-                                    logger.info("Tweet is now liked")
-                                    break
                                 else:
                                     logger.info("We did not reply for no follow. Continue.")
-                                
-                                    # Verify if user is following the account we tweeted from
-                                    if tweet.user.id in follower_ids:
-                                        logger.info("Is Following")
-                                        #input("Press Enter to continue...")
-                                        
-                                        CheckFileExist(twitter_tweet_id_replied_to_no_hashtag_filename)
-                                        with open(twitter_tweet_id_replied_to_no_hashtag_filename, mode ='r', encoding='UTF8') as file:
-                                            logger.info("Opening " + str(twitter_tweet_id_replied_to_no_hashtag_filename) + " file.")
-                                            if (str(tweet.id)) in file.read():                        
-                                                logger.info("We already replied for no hashtag")
-                                                break
-                                            else:
-                                                logger.info("We did not reply for no hashtag. Continue.")
-                                                
-                                                # Verify if the hashtag is in the message
-                                                hashtag_in_message = re.findall(tweet_hashtag_to_search,  tweet.text.lower(), flags=re.IGNORECASE)
 
-                                                if tweet_hashtag_to_search.lower() in hashtag_in_message:
-                                                    hashtag_found = 1
-                                                    logger.info("Hashtag found")
-
-                                                    if hashtag_found == 1:
-                                                        # Verify if Twitter userID already got the tokens, or is on blocklist
-                                                        CheckFileExist(twitter_user_id_filename)
-                                                        with open(twitter_user_id_filename, mode ='r', encoding='UTF8') as file:
-                                                            logger.info("Opening " + str(twitter_user_id_filename) + " file.")
-                                                            if (str(tweet.user.id)) in file.read():
-                                                                logger.info("User ID " + str(tweet.user.id) + " found in the list. Skipping.")
-                                                                break
-                                                            else:
-                                                                logger.info("This is a new user. We continue")
-                                                                
-                                                                # Verify if the Tweet text contains the keyword
-                                                                if any(keyword in tweet.text.lower() for keyword in keywords):
-                                                                    # Verify tweet has Shimmer address
-                                                                    shimmer_reply_address = re.findall(shimmer_address_pattern, tweet.text, flags=re.IGNORECASE)
-                                                                    logger.info("Looking for address in " + str(tweet.id))
-                                                                
-                                                                    for shimmer_receiver_address in shimmer_reply_address:
-                                                                        logger.info("Address found")
-
-                                                                        if status.favorited == False:
-                                                                            try:
-                                                                                logger.info("Is not Liked")
-                                                                                # Verify if Shimmer address already got the tokens, or is on blocklist
-                                                                                CheckFileExist(shimmer_address_sent_to_filename)
-                                                                                with open(shimmer_address_sent_to_filename, mode ='r', encoding='UTF8') as file:
-                                                                                    if (str(shimmer_reply_address)) in file.read():
-                                                                                        logger.info("Address " + str(shimmer_reply_address) + " found in file. Skipping.")
-                                                                                        continue                   
-                                                                                    else:
-                                                                                        logger.info("This is a new address")
-                                                                                        # Now we send the tokens
-                                                                                        SendNativeToken()
-                                                                                        # Write the address to the file
-                                                                                        WriteToFile(shimmer_receiver_address, shimmer_address_sent_to_filename)
-                                                                                        #Write the Twitter user.ID to the file
-                                                                                        WriteToFile(tweet.user.id, twitter_user_id_filename)
-                                                                                        # We like (favorite) the Tweet to mark it as complete, this tweet will no longer be taken in consideration
-                                                                                        tweet.favorite()
-                                                                                        logger.info("Tweet is now liked")
-                                                                                        continue
-                                                                            except tweepy.TweepyException as e:
-                                                                                print('Error: ' + str(e))
-                                                                                continue
-
-                                                                        else:
-                                                                            logger.info("Is liked no need to send tokens")
-                                                                            break
-                                                                    else:
-                                                                        logger.info("No address in the reply")
-                                                                        break
-                                                                else:
-                                                                    logger.info("No keyword in the reply")
-                                                                    break
-
-                                                else:
-                                                    logger.info("Hashtag is missing")
-                                                    reply_to_user = tweet.user.screen_name
-                                                    message_to_reply = "@%s Sorry, you need to add the %s hashtag to get an airdrop! Write a new reply with your %s address and the %s hashtag!" %(reply_to_user, tweet_hashtag_to_search, keywords, tweet_hashtag_to_search)
-                                                    api.update_status(message_to_reply, in_reply_to_status_id = tweet.id, auto_populate_reply_metadata=True)
-                                                    # Add tweet id to file
-                                                    WriteToFile(tweet.id, twitter_tweet_id_replied_to_no_hashtag_filename)
-                                                    tweet.favorite()
-                                                    logger.info("Tweet is now liked")                                                    
-                                                    break
-                                
-                                    elif tweet.user.id not in follower_ids:
-                                        logger.info("Not following, replying message.")
-                                        reply_to_user = tweet.user.screen_name
-                                        message_to_reply = "@%s Sorry, you need to follow @%s to get an airdrop!" %(reply_to_user, twitter_user_id_to_monitor)
-                                        api.update_status(message_to_reply, in_reply_to_status_id = tweet.id, auto_populate_reply_metadata=True)
-                                        # Add tweet id to file
-                                        WriteToFile(tweet.id, twitter_tweet_id_replied_to_no_follow_filename)
+                                    if str(tweet.id) in file.read() and tweet.user.id in follower_ids:
+                                        logger.info("We replied before and is now following.")
+                                        # Now we send the tokens
+                                        SendNativeToken()
+                                        # Write the address to the file
+                                        WriteToFile(shimmer_receiver_address, shimmer_address_sent_to_filename)
+                                        #Write the Twitter user.ID to the file
+                                        WriteToFile(tweet.user.id, twitter_user_id_filename)
+                                        # We like (favorite) the Tweet to mark it as complete, this tweet will no longer be taken in consideration
+                                        tweet.favorite()
+                                        logger.info("Tweet is now liked")
                                         break
                                     else:
-                                        logger.info("Not following, already replied")
-                                        break
+                                
+                                    # Verify if user is following the account we tweeted from
+                                        if tweet.user.id in follower_ids:
+                                            logger.info("Is Following")
+                                            #input("Press Enter to continue...")
+                                            
+                                            CheckFileExist(twitter_tweet_id_replied_to_no_hashtag_filename)
+                                            with open(twitter_tweet_id_replied_to_no_hashtag_filename, mode ='r', encoding='UTF8') as file:
+                                                logger.info("Opening " + str(twitter_tweet_id_replied_to_no_hashtag_filename) + " file.")
+                                                if (str(tweet.id)) in file.read():                        
+                                                    logger.info("We already replied for no hashtag")
+                                                    break
+                                                else:
+                                                    logger.info("We did not reply for no hashtag. Continue.")
+                                                    
+                                                    # Verify if the hashtag is in the message
+                                                    hashtag_in_message = re.findall(tweet_hashtag_to_search,  tweet.text.lower(), flags=re.IGNORECASE)
+
+                                                    if tweet_hashtag_to_search.lower() in hashtag_in_message:
+                                                        hashtag_found = 1
+                                                        logger.info("Hashtag found")
+
+                                                        if hashtag_found == 1:
+                                                            # Verify if Twitter userID already got the tokens, or is on blocklist
+                                                            CheckFileExist(twitter_user_id_filename)
+                                                            with open(twitter_user_id_filename, mode ='r', encoding='UTF8') as file:
+                                                                logger.info("Opening " + str(twitter_user_id_filename) + " file.")
+                                                                if (str(tweet.user.id)) in file.read():
+                                                                    logger.info("User ID " + str(tweet.user.id) + " found in the list. Skipping.")
+                                                                    break
+                                                                else:
+                                                                    logger.info("This is a new user. We continue")
+                                                                    
+                                                                    # Verify if the Tweet text contains the keyword
+                                                                    if any(keyword in tweet.text.lower() for keyword in keywords):
+                                                                        # Verify tweet has Shimmer address
+                                                                        shimmer_reply_address = re.findall(shimmer_address_pattern, tweet.text, flags=re.IGNORECASE)
+                                                                        logger.info("Looking for address in " + str(tweet.id))
+                                                                    
+                                                                        for shimmer_receiver_address in shimmer_reply_address:
+                                                                            logger.info("Address found")
+
+                                                                            if status.favorited == False:
+                                                                                try:
+                                                                                    logger.info("Is not Liked")
+                                                                                    # Verify if Shimmer address already got the tokens, or is on blocklist
+                                                                                    CheckFileExist(shimmer_address_sent_to_filename)
+                                                                                    with open(shimmer_address_sent_to_filename, mode ='r', encoding='UTF8') as file:
+                                                                                        if (str(shimmer_reply_address)) in file.read():
+                                                                                            logger.info("Address " + str(shimmer_reply_address) + " found in file. Skipping.")
+                                                                                            continue                   
+                                                                                        else:
+                                                                                            logger.info("This is a new address")
+                                                                                            # Now we send the tokens
+                                                                                            SendNativeToken()
+                                                                                            # Write the address to the file
+                                                                                            WriteToFile(shimmer_receiver_address, shimmer_address_sent_to_filename)
+                                                                                            #Write the Twitter user.ID to the file
+                                                                                            WriteToFile(tweet.user.id, twitter_user_id_filename)
+                                                                                            # We like (favorite) the Tweet to mark it as complete, this tweet will no longer be taken in consideration
+                                                                                            tweet.favorite()
+                                                                                            logger.info("Tweet is now liked")
+                                                                                            continue
+                                                                                except tweepy.TweepyException as e:
+                                                                                    print('Error: ' + str(e))
+                                                                                    continue
+
+                                                                            else:
+                                                                                logger.info("Is liked no need to send tokens")
+                                                                                break
+                                                                        else:
+                                                                            logger.info("No address in the reply")
+                                                                            break
+                                                                    else:
+                                                                        logger.info("No keyword in the reply")
+                                                                        break
+
+                                                    else:
+                                                        logger.info("Hashtag is missing")
+                                                        reply_to_user = tweet.user.screen_name
+                                                        message_to_reply = "@%s Sorry, you need to add the %s hashtag to get an airdrop! Write a new reply with your %s address and the %s hashtag!" %(reply_to_user, tweet_hashtag_to_search, keywords, tweet_hashtag_to_search)
+                                                        api.update_status(message_to_reply, in_reply_to_status_id = tweet.id, auto_populate_reply_metadata=True)
+                                                        # Add tweet id to file
+                                                        WriteToFile(tweet.id, twitter_tweet_id_replied_to_no_hashtag_filename)
+                                                        tweet.favorite()
+                                                        logger.info("Tweet is now liked")                                                    
+                                                        break
+                                    
+                                        elif tweet.user.id not in follower_ids:
+                                            logger.info("Not following, replying message.")
+                                            reply_to_user = tweet.user.screen_name
+                                            message_to_reply = "@%s Sorry, you need to follow @%s to get an airdrop!" %(reply_to_user, twitter_user_id_to_monitor)
+                                            api.update_status(message_to_reply, in_reply_to_status_id = tweet.id, auto_populate_reply_metadata=True)
+                                            # Add tweet id to file
+                                            WriteToFile(tweet.id, twitter_tweet_id_replied_to_no_follow_filename)
+                                            break
+                                        else:
+                                            logger.info("Not following, already replied")
+                                            break
                         else:
                             logger.info("This is not a reply to our giveaway tweet.")
                             print(tweet.id)
