@@ -289,17 +289,28 @@ def CheckMentions(api, keywords, user_name, monitor_id):
                             with open(twitter_tweet_id_replied_to_no_follow_filename, mode ='r', encoding='UTF8') as file:
                                 logger.debug("Opening " + str(twitter_tweet_id_replied_to_no_follow_filename) + " file.")
                                 if str(tweet.id) in file.read() and tweet.user.id in follower_ids:
-                                            logger.info("We replied before and is now following.")
-                                            # Now we send the tokens
-                                            SendNativeToken()
-                                            # Write the address to the file
-                                            WriteToFile(shimmer_receiver_address, shimmer_address_sent_to_filename)
-                                            #Write the Twitter user.ID to the file
-                                            WriteToFile(tweet.user.id, twitter_user_id_filename)
-                                            # We like (favorite) the Tweet to mark it as complete, this tweet will no longer be taken in consideration
-                                            tweet.favorite()
-                                            logger.info("Tweet is now liked")
-                                            break
+                                    logger.debug("User is now following, after it was told to do so.")
+                                    # Verify if the Tweet text contains the keyword
+                                    if any(keyword in tweet.text.lower() for keyword in keywords):
+                                        # Verify tweet has Shimmer address
+                                        shimmer_reply_address = re.findall(shimmer_address_pattern, tweet.text, flags=re.IGNORECASE)
+                                        logger.info("Looking for address in " + str(tweet.id))
+                                        logger.debug("Shimmer receiver address is: " + str(shimmer_receiver_address))
+                                        logger.debug("Shimmer reply address is: " + str(shimmer_reply_address))
+                                    
+                                        for shimmer_receiver_address in shimmer_reply_address:
+                                            logger.info("Address found")
+
+                                            if status.favorited == False:
+                                                tweet_user_id = tweet.user.id
+                                                BotSendTokens(shimmer_address_sent_to_filename, shimmer_receiver_address, shimmer_reply_address, tweet_user_id, twitter_user_id_filename)
+                                                # We like (favorite) the Tweet to mark it as complete, this tweet will no longer be taken in consideration
+                                                tweet.favorite()
+                                                logger.info("Tweet is now liked")
+                                            else:
+                                                logger.info("Is liked no need to send tokens")
+                                                break
+
                                 elif str(tweet.id) in file.read():                        
                                         logger.info("We already replied for no follow")
                                         break
@@ -343,35 +354,18 @@ def CheckMentions(api, keywords, user_name, monitor_id):
                                                                     # Verify tweet has Shimmer address
                                                                     shimmer_reply_address = re.findall(shimmer_address_pattern, tweet.text, flags=re.IGNORECASE)
                                                                     logger.info("Looking for address in " + str(tweet.id))
+                                                                    logger.debug("Shimmer receiver address is: " + str(shimmer_receiver_address))
+                                                                    logger.debug("Shimmer reply address is: " + str(shimmer_reply_address))
                                                                 
                                                                     for shimmer_receiver_address in shimmer_reply_address:
                                                                         logger.info("Address found")
 
                                                                         if status.favorited == False:
-                                                                            try:
-                                                                                logger.info("Is not Liked")
-                                                                                # Verify if Shimmer address already got the tokens, or is on blocklist
-                                                                                CheckFileExist(shimmer_address_sent_to_filename)
-                                                                                with open(shimmer_address_sent_to_filename, mode ='r', encoding='UTF8') as file:
-                                                                                    if (str(shimmer_reply_address)) in file.read():
-                                                                                        logger.info("Address " + str(shimmer_reply_address) + " found in file. Skipping.")
-                                                                                        continue                   
-                                                                                    else:
-                                                                                        logger.info("This is a new address")
-                                                                                        # Now we send the tokens
-                                                                                        SendNativeToken()
-                                                                                        # Write the address to the file
-                                                                                        WriteToFile(shimmer_receiver_address, shimmer_address_sent_to_filename)
-                                                                                        #Write the Twitter user.ID to the file
-                                                                                        WriteToFile(tweet.user.id, twitter_user_id_filename)
-                                                                                        # We like (favorite) the Tweet to mark it as complete, this tweet will no longer be taken in consideration
-                                                                                        tweet.favorite()
-                                                                                        logger.info("Tweet is now liked")
-                                                                                        continue
-                                                                            except tweepy.TweepyException as e:
-                                                                                print('Error: ' + str(e))
-                                                                                continue
-
+                                                                            tweet_user_id = tweet.user.id
+                                                                            BotSendTokens(shimmer_address_sent_to_filename, shimmer_receiver_address, shimmer_reply_address, tweet_user_id, twitter_user_id_filename)
+                                                                            # We like (favorite) the Tweet to mark it as complete, this tweet will no longer be taken in consideration
+                                                                            tweet.favorite()
+                                                                            logger.info("Tweet is now liked")
                                                                         else:
                                                                             logger.info("Is liked no need to send tokens")
                                                                             break
@@ -448,7 +442,7 @@ def CreateShimmerProfile():
             # This creates a new database and account
 
             client_options = {
-                'nodes': ['https://api.shimmer.network'],
+                'nodes': ['https://api.testnet.shimmer.network'],
             }
 
             # Shimmer coin type
@@ -533,6 +527,25 @@ def ReadAddressesFromFile():
                         WriteToFile(shimmer_receiver_address, shimmer_address_sent_to_filename)
                     else:
                         logger.info("This is not an address")
+
+def BotSendTokens(shimmer_address_sent_to_filename, shimmer_receiver_address, shimmer_reply_address, tweet_user_id, twitter_user_id_filename):
+    try:
+        logger.info("Is not Liked")
+        # Verify if Shimmer address already got the tokens, or is on blocklist
+        CheckFileExist(shimmer_address_sent_to_filename)
+        with open(shimmer_address_sent_to_filename, mode ='r', encoding='UTF8') as file:
+            if (str(shimmer_reply_address)) in file.read():
+                logger.info("Address " + str(shimmer_reply_address) + " found in file. Skipping.")                   
+            else:
+                logger.info("This is a new address")
+                # Now we send the tokens
+                SendNativeToken()
+                # Write the address to the file
+                WriteToFile(shimmer_receiver_address, shimmer_address_sent_to_filename)
+                #Write the Twitter user.ID to the file
+                WriteToFile(tweet_user_id, twitter_user_id_filename)
+    except tweepy.TweepyException as e:
+        print('Error: ' + str(e))
 
 #####################################
 # Configurations functions
