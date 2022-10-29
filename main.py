@@ -288,6 +288,9 @@ def CheckMentions(api, keywords, user_name, monitor_id):
                             CheckFileExist(twitter_tweet_id_replied_to_no_follow_filename)
                             with open(twitter_tweet_id_replied_to_no_follow_filename, mode ='r', encoding='UTF8') as file:
                                 logger.debug("Opening " + str(twitter_tweet_id_replied_to_no_follow_filename) + " file.")
+                                #print(follower_ids)
+                                print("WIth open")
+                                print(file.read())
                                 if str(tweet.id) in file.read() and tweet.user.id in follower_ids:
                                     logger.debug("User is now following, after it was told to do so.")
                                     # Verify if the Tweet text contains the keyword
@@ -310,11 +313,16 @@ def CheckMentions(api, keywords, user_name, monitor_id):
                                             else:
                                                 logger.info("Is liked no need to send tokens")
                                                 break
-
-                                elif str(tweet.id) in file.read():                        
+                                elif str(tweet.id) in file.read():
+                                        #logger.debug(follower_ids)
+                                        print("elif")
+                                        logger.debug(file.read())
                                         logger.info("We already replied for no follow")
                                         break
                                 else:
+                                    #logger.debug(follower_ids)
+                                    print("else")
+                                    logger.debug(file.read())
                                     logger.info("We did not reply for no follow. Continue.")
 
                                     # Verify if user is following the account we tweeted from
@@ -442,7 +450,7 @@ def CreateShimmerProfile():
             # This creates a new database and account
 
             client_options = {
-                'nodes': ['https://api.testnet.shimmer.network'],
+                'nodes': ['https://api.shimmer.network'],
             }
 
             # Shimmer coin type
