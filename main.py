@@ -385,7 +385,7 @@ def CheckMentions(api, user_name, monitor_id):
                             logger.info("Tweet is now liked")
                             reply_to_user = tweet.user.screen_name
                             message_to_reply = ".@%s! The tokens have been airdropped! Check out the transaction in the #Shimmer explorer https://explorer.shimmer.network/testnet/search/%s!" %(reply_to_user, shimmer_receiver_address)
-                            # MAINNET: message_to_reply = "@%s! The tokens have been airdropped! Check out the transaction in the #Shimmer explorer https://explorer.shimmer.network/shimmer/search/%s!" %(reply_to_user, tweet_hashtag_to_search, tweet_hashtag_to_search)
+                            # MAINNET: message_to_reply = "@%s! The tokens have been airdropped! Check out the transaction in the #Shimmer explorer https://explorer.shimmer.network/shimmer/search/%s!" %(reply_to_user, shimmer_receiver_address)
                             api.update_status(message_to_reply, in_reply_to_status_id = tweet.id, auto_populate_reply_metadata=True)
 
                 except tweepy.TweepyException as e:
