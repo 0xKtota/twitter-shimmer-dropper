@@ -391,7 +391,10 @@ def CheckMentions(api, user_name, monitor_id):
                 except tweepy.TweepyException as e:
                     logger.debug('Error: ' + str(e))
         else:
-            logger.info("There is an issue with searching tweets.")
+            logger.info("There is an issue with searching tweets")
+      else:
+        logger.info("We start from the beginning")
+        CheckMentions(api, user_name, monitor_id)
     else:
         logger.info("Please finish the configuration")    
 
