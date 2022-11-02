@@ -16,7 +16,7 @@ shimmer_mnemonic = os.getenv("SHIMMER_MNEMONIC")
 shimmer_native_token_id = os.getenv("SHIMMER_NATIVE_TOKEN_ID")
 shimmer_native_token_amount = os.getenv("SHIMMER_NATIVE_TOKEN_AMOUNT")
 shimmer_address_pattern = os.getenv("SHIMMER_ADDRESS_PATTERN")
-twitter_user_id_to_monitor = os.getenv("TWITTER_USER_ID_TO_MONITOR")
+twitter_user_name_to_monitor = os.getenv("TWITTER_USER_NAME_TO_MONITOR")
 twitter_status_id_to_monitor = os.getenv("TWITTER_STATUS_ID_TO_MONITOR")
 tweet_hashtag_to_search = os.getenv("TWEET_HASHTAG_TO_SEARCH")
 config_done = os.getenv("CONFIG_DONE")
@@ -124,16 +124,16 @@ def ConfigureTwitterBot():
                     print("Try again")
                 continue
 
-        def InsertTwitterUserIdToMonitor():
+        def InsertTwitterUserNameToMonitor():
             while(True):
                 try:
                     # Prompts the user for input string
-                    test = input("Enter Your Twitter Username: ")
+                    test = input("Enter your Twitter username: ")
                     
                     # Checks whether the whole string matches the re.pattern or not
-                    print(f"Twitter User ID entered = '{test}'")
-                    twitter_user_id = test
-                    return twitter_user_id
+                    print(f"Twitter user name entered = '{test}'")
+                    twitter_user_name = test
+                    return twitter_user_name
                 except:
                     print("Try again")
                 continue
@@ -162,7 +162,7 @@ def ConfigureTwitterBot():
         def WriteToEnv():
             with open('.env','r',encoding='utf-8') as file:
                 data = file.readlines()
-                data[6] = "TWITTER_USER_ID_TO_MONITOR="+ str(twitter_user_id_to_monitor + "\n")
+                data[6] = "TWITTER_USER_NAME_TO_MONITOR="+ str(twitter_user_name_to_monitor + "\n")
                 data[7] = "TWITTER_STATUS_ID_TO_MONITOR="+ str(twitter_status_id_to_monitor + "\n")
                 data[13] = "SHIMMER_NATIVE_TOKEN_ID="+ str(shimmer_native_token_id + "\n")
                 data[14] = "SHIMMER_NATIVE_TOKEN_AMOUNT="+ str(shimmer_native_token_amount + "\n")
@@ -172,7 +172,7 @@ def ConfigureTwitterBot():
 
         shimmer_native_token_id = InsertShimmerNativeTokenId()
         shimmer_native_token_amount = InsertShimmerNativeTokenAmount()
-        twitter_user_id_to_monitor = InsertTwitterUserIdToMonitor()
+        twitter_user_name_to_monitor = InsertTwitterUserIdToMonitor()
         twitter_status_id_to_monitor = InsertTwitterStatusIdToMonitor()
         # Verifying if all necessary file exist or write them
         CheckFileExist(twitter_user_id_filename)
@@ -193,7 +193,7 @@ def ResetTwitterBotConfiguration():
             def WriteToEnv():    
                 with open('.env','r',encoding='utf-8') as file:
                     data = file.readlines()
-                data[6] = "TWITTER_USER_ID_TO_MONITOR=\n"
+                data[6] = "TWITTER_USER_NAME_TO_MONITOR=\n"
                 data[7] = "TWITTER_STATUS_ID_TO_MONITOR=\n"
                 data[13] = "SHIMMER_NATIVE_TOKEN_ID=\n"
                 data[14] = "SHIMMER_NATIVE_TOKEN_AMOUNT=\n"
@@ -249,7 +249,7 @@ def CreateApi():
 
 def GetFollowers(api):
     logger.info("Retrieving IDs of followers, this might take some time.")
-    for user in tweepy.Cursor(api.get_follower_ids, screen_name=twitter_user_id_to_monitor).items():
+    for user in tweepy.Cursor(api.get_follower_ids, screen_name=twitter_user_name_to_monitor).items():
         follower_ids.append(user)
 
 def CheckMentions(api, user_name, monitor_id):
@@ -266,7 +266,7 @@ def CheckMentions(api, user_name, monitor_id):
         count = 0
 
         for tweet in tweepy.Cursor(api.search_tweets, q='to:'+user_name, result_type='recent', count=100).items(1000):
-            while count < 200:
+            while count < 1000:
                 logger.debug("Round: " + str(count))
 
                 try:
@@ -290,7 +290,7 @@ def CheckMentions(api, user_name, monitor_id):
                     # Verify if user's tweet is a reply
                     if not hasattr(tweet, 'in_reply_to_status_id_str'):
                         logger.info("What we found is not a reply")
-                        print(tweet.id)
+                        logger.debug("Tweet id: " + str(tweet.id))
                         break
             
                     # Verify if user's tweet is a reply to the tweet we monitor
@@ -304,7 +304,7 @@ def CheckMentions(api, user_name, monitor_id):
 
                     # Verify if the user is following or tell them to do so
                     if tweet.user.id not in follower_ids:
-                        logger.info("User is not following, replying message")
+                        logger.info("User is not following, reply message")
                         logger.debug("Tweet id: " + str(tweet.id))
                         
                         CheckFileExist(twitter_tweet_id_replied_to_no_follow_filename)
@@ -312,16 +312,16 @@ def CheckMentions(api, user_name, monitor_id):
                             logger.debug("Opening " + str(twitter_tweet_id_replied_to_no_follow_filename) + " file.")
                             if str(tweet_id) in file.read():
                                 logger.debug(file.read())
-                                logger.info("We already replied. Skipping")
+                                logger.info("Bot already replied. Skipping")
                                 break
                             else:
                                 reply_to_user = tweet.user.screen_name
-                                message_to_reply = ".@%s Sorry, you need to follow @%s to get an airdrop! Follow and reply again to the giveaway tweet. Remember the address and the %s hashtag!" %(reply_to_user, twitter_user_id_to_monitor, tweet_hashtag_to_search)
+                                message_to_reply = ".@%s Sorry, you need to follow @%s to get an airdrop! Follow and reply again to the giveaway tweet. Remember the address and the %s hashtag!" %(reply_to_user, twitter_user_name_to_monitor, tweet_hashtag_to_search)
                                 api.update_status(message_to_reply, in_reply_to_status_id = tweet.id, auto_populate_reply_metadata=True)
                                 # Add tweet id to file
                                 WriteToFile(tweet.id, twitter_tweet_id_replied_to_no_follow_filename)
                                 tweet.favorite()
-                                logger.info("Tweet is now liked and will be skipped next time")
+                                logger.info("Tweet is now liked and next time will be skipped")
                                 break                 
                     
                     # Verify if we sent tokens to this user already
@@ -329,7 +329,8 @@ def CheckMentions(api, user_name, monitor_id):
                     with open(twitter_user_id_filename, mode ='r', encoding='UTF8') as file:
                         logger.debug("Opening " + str(twitter_user_id_filename) + " file.")
                         if str(tweet_user_id) in file.read():
-                            logger.info("We already sent to this user. Skipping")
+                            logger.info("Bot already sent tokens to this user. Skipping")
+                            logger.debug("Tweet user id: " + str(tweet_user_id))
                             break
 
                     # TODO make hashtag check configurable
@@ -346,10 +347,10 @@ def CheckMentions(api, user_name, monitor_id):
                         # Add tweet id to file
                         WriteToFile(tweet.id, twitter_tweet_id_replied_to_no_hashtag_filename)
                         tweet.favorite()
-                        logger.info("Tweet is now liked and will be skipped next time")
+                        logger.info("Tweet is now liked and next round will be skipped")
                         break
 
-                    logger.debug("We should now verify if address is in the message")    
+                    logger.debug("Bot will verify if an address is present in the message")    
                     
                     # Verify tweet has Shimmer address
                     shimmer_receiver_address = re.findall(shimmer_address_pattern, tweet.text.lower(), flags=re.IGNORECASE)
@@ -360,10 +361,11 @@ def CheckMentions(api, user_name, monitor_id):
                     if not shimmer_receiver_address:
                         logger.info("Address not found")
                         tweet.favorite()
-                        logger.info("Tweet is now liked and will be skipped next time")
+                        logger.info("Tweet is now liked and next round will be skipped")
                         break
                     
                     # Clean address
+                    # CleanShimmerAddress(shimmer_receiver_address)
                     dirty_shimmer_receiver_address = shimmer_receiver_address
                     shimmer_receiver_address = re.sub('[\'[\]]', '', str(dirty_shimmer_receiver_address))
                     logger.debug("Cleaned address: " + str(shimmer_receiver_address))
@@ -373,34 +375,36 @@ def CheckMentions(api, user_name, monitor_id):
                     with open(shimmer_address_sent_to_filename, mode ='r', encoding='UTF8') as file:
                         logger.debug("Opening " + str(shimmer_address_sent_to_filename) + " file.")
                         if str(shimmer_receiver_address) in file.read():
-                            logger.info("We already sent tokens to this adress. Skipping")
+                            logger.info("Bot already sent tokens to this adress. Skipping")
+                            logger.debug("Address: " + str(shimmer_receiver_address))
                             break
                         else:
                             # We can finally send
-                            input("Press Enter to continue...") # Only for debugging
+                            # input("Press Enter to continue...") # Only for debugging
                             tweet_user_id = tweet.user.id
                             BotSendTokens(shimmer_address_sent_to_filename, shimmer_receiver_address, tweet_user_id, twitter_user_id_filename)
                             # We like (favorite) the Tweet to mark it as complete, this tweet will no longer be taken in consideration
                             tweet.favorite()
                             logger.info("Tweet is now liked")
                             reply_to_user = tweet.user.screen_name
-                            message_to_reply = ".@%s! The tokens have been airdropped! Check out the transaction in the #Shimmer explorer https://explorer.shimmer.network/testnet/search/%s!" %(reply_to_user, shimmer_receiver_address)
-                            # MAINNET: message_to_reply = ".@%s! The tokens have been airdropped! Check out the transaction in the #Shimmer explorer https://explorer.shimmer.network/shimmer/search/%s!" %(reply_to_user, shimmer_receiver_address)
+                            message_to_reply = ".@%s! The tokens have been airdropped! Check out the transaction in the #Shimmer explorer https://explorer.shimmer.network/testnet/search/%s!" %(reply_to_user, shimmer_receiver_address) # Shimmer Testnet
+                            # message_to_reply = ".@%s! The tokens have been airdropped! Check out the transaction in the #Shimmer explorer https://explorer.shimmer.network/shimmer/search/%s!" %(reply_to_user, shimmer_receiver_address) # Shimmer Mainnet
                             api.update_status(message_to_reply, in_reply_to_status_id = tweet.id, auto_populate_reply_metadata=True)
 
                 except tweepy.TweepyException as e:
                     logger.debug('Error: ' + str(e))
+
+            else:
+                logger.info("We restart from the beginning to look for new followers")
+                CheckMentions(api, user_name, monitor_id)
         else:
             logger.info("There is an issue with searching tweets")
-      else:
-        logger.info("We start from the beginning")
-        CheckMentions(api, user_name, monitor_id)
     else:
-        logger.info("Please finish the configuration")    
+        logger.info("Please complete the configuration first")
 
 def RunTwitterBot():
     api = CreateApi()
-    user_name = twitter_user_id_to_monitor
+    user_name = twitter_user_name_to_monitor
     monitor_id = twitter_status_id_to_monitor
     CheckMentions(api, user_name, monitor_id)
 
@@ -455,8 +459,12 @@ def GetShimmerAddresses():
 
 def SendNativeToken(shimmer_receiver_address):
     if IsConfigDone() == True:
+        # CleanShimmerAddress(shimmer_receiver_address)
+        dirty_shimmer_receiver_address = shimmer_receiver_address
+        shimmer_receiver_address = re.sub('[\'[\]]', '', str(dirty_shimmer_receiver_address))
+        logger.debug("Cleaned address: " + str(shimmer_receiver_address))
         # Send native tokens
-        logger.info("I am sending native tokens")
+        logger.info("Bot is sending native tokens")
         wallet = IotaWallet('./twitter-database')
         account = wallet.get_account('Twitter')
 
@@ -473,20 +481,21 @@ def SendNativeToken(shimmer_receiver_address):
                 # hex converted
                 hex(int(shimmer_native_token_amount))
             )],
+            "expiration": 604800
         }];
 
         transaction = account.send_native_tokens(outputs, None)
 
-        logger.info("Transaction sent")
-        logger.info("Sleeping 25s to make sure transaction is out")
         logger.debug("Tokens sent to: " + str(shimmer_receiver_address))
+        logger.debug(str(shimmer_native_token_amount) + " tokens sent")
+        logger.info("Sleeping 25s to make sure transaction is out")    
         time.sleep(25)
 
 def SendToList():
     global shimmer_receiver_address
     if IsConfigDone() == True:
         if os.path.isfile('wallet.stronghold') == False:
-            logger.info("Profile does not exists. Please create a profile first.")
+            logger.info("Profile does not exists. Please create a profile first")
             input("Press Enter to continue...")
             os.system('clear')
         else:
@@ -498,18 +507,25 @@ def ReadAddressesFromFile():
     if IsConfigDone() == True:
         with open('addresses_to_send.txt', mode ='r', encoding='UTF8') as file:
             for line in file.readlines():
+                #CleanShimmerAddress(shimmer_receiver_address)
+                dirty_shimmer_receiver_address = shimmer_receiver_address
+                shimmer_receiver_address = re.sub('[\'[\]]', '', str(dirty_shimmer_receiver_address))
+                logger.debug("Cleaned address: " + str(shimmer_receiver_address))
                 shimmer_list_address = re.findall(shimmer_address_pattern, line, flags=re.IGNORECASE)
                 for shimmer_receiver_address in shimmer_list_address:
                     if line.startswith(shimmer_receiver_address):
                         logger.info("Address found " + str(shimmer_receiver_address))
                         SendNativeToken(shimmer_receiver_address)
-                        #shimmer_receiver_address
                         WriteToFile(shimmer_receiver_address, shimmer_address_sent_to_filename)
                     else:
                         logger.info("This is not an address")
 
 def BotSendTokens(shimmer_address_sent_to_filename, shimmer_receiver_address, tweet_user_id, twitter_user_id_filename):
     logger.debug("Receiver address in BotSenTokens is: " + str(shimmer_receiver_address))
+    # CleanShimmerAddress(shimmer_receiver_address)
+    dirty_shimmer_receiver_address = shimmer_receiver_address
+    shimmer_receiver_address = re.sub('[\'[\]]', '', str(dirty_shimmer_receiver_address))
+    logger.debug("Cleaned address: " + str(shimmer_receiver_address))
     try:
         logger.info("Is not Liked")
         # Verify if Shimmer address already got the tokens, or is on blocklist
@@ -527,6 +543,12 @@ def BotSendTokens(shimmer_address_sent_to_filename, shimmer_receiver_address, tw
                 WriteToFile(tweet_user_id, twitter_user_id_filename)
     except tweepy.TweepyException as e:
         print('Error: ' + str(e))
+
+def CleanShimmerAddress(shimmer_receiver_address):
+    dirty_shimmer_receiver_address = shimmer_receiver_address
+    shimmer_receiver_address = re.sub('[\'[\]]', '', str(dirty_shimmer_receiver_address))
+    logger.debug("Cleaned address: " + str(shimmer_receiver_address))
+    return shimmer_receiver_address
 
 #####################################
 # Configurations functions
