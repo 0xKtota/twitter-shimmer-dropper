@@ -172,7 +172,7 @@ def ConfigureTwitterBot():
 
         shimmer_native_token_id = InsertShimmerNativeTokenId()
         shimmer_native_token_amount = InsertShimmerNativeTokenAmount()
-        twitter_user_name_to_monitor = InsertTwitterUserIdToMonitor()
+        twitter_user_name_to_monitor = InsertTwitterUserNameToMonitor()
         twitter_status_id_to_monitor = InsertTwitterStatusIdToMonitor()
         # Verifying if all necessary file exist or write them
         CheckFileExist(twitter_user_id_filename)
