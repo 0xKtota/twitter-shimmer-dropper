@@ -277,7 +277,6 @@ def CheckMentions(api, user_name, monitor_id):
                     tweet_text_lower = tweet.text.lower
 
                     logger.info("Getting extra sleep")
-                    count = count + 1
                     time.sleep(1 + extra_time)
                     # input("Press Enter to continue...") # Only for debugging
 
@@ -390,15 +389,18 @@ def CheckMentions(api, user_name, monitor_id):
                             message_to_reply = ".@%s! The tokens have been airdropped! Check out the transaction in the #Shimmer explorer https://explorer.shimmer.network/testnet/search/%s!" %(reply_to_user, shimmer_receiver_address) # Shimmer Testnet
                             # message_to_reply = ".@%s! The tokens have been airdropped! Check out the transaction in the #Shimmer explorer https://explorer.shimmer.network/shimmer/search/%s!" %(reply_to_user, shimmer_receiver_address) # Shimmer Mainnet
                             api.update_status(message_to_reply, in_reply_to_status_id = tweet.id, auto_populate_reply_metadata=True)
+                            count = count + 1
 
                 except tweepy.TweepyException as e:
                     logger.debug('Error: ' + str(e))
+                    break
 
             else:
                 logger.info("We restart from the beginning to look for new followers")
                 CheckMentions(api, user_name, monitor_id)
         else:
             logger.info("There is an issue with searching tweets")
+            CheckMentions(api, user_name, monitor_id)
     else:
         logger.info("Please complete the configuration first")
 
