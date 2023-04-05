@@ -452,7 +452,7 @@ def GetShimmerAddresses():
     wallet = IotaWallet('./twitter-database')
     account = wallet.get_account('Twitter')
     # Sync account with the node
-    response = account.sync_account()
+    response = account.sync()
     print(f'Synced: {response}')
     address = account.addresses()
     print(f'Address: {address}')
@@ -471,7 +471,7 @@ def SendNativeToken(shimmer_receiver_address):
         account = wallet.get_account('Twitter')
 
         # Sync account with the node
-        response = account.sync_account()
+        response = account.sync()
         logger.info("Account syncronized")
         logger.info("Sending to " + str(shimmer_receiver_address))
         wallet.set_stronghold_password(stronghold_password)
